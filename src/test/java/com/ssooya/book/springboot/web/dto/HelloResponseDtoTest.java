@@ -1,6 +1,10 @@
 package com.ssooya.book.springboot.web.dto;
 
+import com.ssooya.book.springboot.domain.posts.Posts;
 import org.junit.Test;
+
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class HelloResponseDtoTest {
@@ -22,4 +26,6 @@ public class HelloResponseDtoTest {
 		assertThat(dto.getAmount())
 				.isEqualTo(amount);
 	}
+
+
 }
