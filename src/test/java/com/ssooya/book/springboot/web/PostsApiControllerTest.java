@@ -1,5 +1,6 @@
 package com.ssooya.book.springboot.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssooya.book.springboot.domain.posts.Posts;
 import com.ssooya.book.springboot.domain.posts.PostsRepository;
 import com.ssooya.book.springboot.web.dto.PostsSaveRequestDto;
@@ -29,6 +30,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -46,14 +50,16 @@ public class PostsApiControllerTest {
 	@Autowired
 	private WebApplicationContext context;
 
+	private MockMvc mvc;
+
+
 	@After
 	public void tearDown() throws Exception{
 		postsRepository.deleteAll();
 	}
 
-	private MockMvc mvc;
 
-	@Before
+	@Before	// 테스트가 시작되기전에 MockMvc 인스턴트 생성
 	public void setup(){
 		mvc = MockMvcBuilders
 				.webAppContextSetup(context)
@@ -77,14 +83,12 @@ public class PostsApiControllerTest {
 		String url = "http://localhost:" + port + "/api/v1/posts";
 
 		//when
-		ResponseEntity<Long> responseEntity = restTemplate.postForEntity(url, requestDto, Long.class);
+		mvc.perform(post(url)
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.content(new ObjectMapper().writeValueAsString(requestDto)))
+				.andExpect(status().isOk());
 
 		//then
-		assertThat(responseEntity.getStatusCode()).
-				isEqualTo(HttpStatus.OK);
-		assertThat(responseEntity.getBody()).
-				isGreaterThan(0L);
-
 		List<Posts> all = postsRepository.findAll();
 		assertThat(all.get(0).getTitle()).isEqualTo(title);
 		assertThat(all.get(0).getContent()).isEqualTo(content);
@@ -115,13 +119,23 @@ public class PostsApiControllerTest {
 		HttpEntity<PostsUpdateRequestDto> requestEntity = new HttpEntity<>(requestDto);
 
 		//when
-		ResponseEntity<Long> responseEntity = restTemplate
-				.exchange(url, HttpMethod.PUT, requestEntity, Long.class);
+
+		// mvc.perform = 생성된 MockMvc를 통해 API를 테스트합니다.
+		// 본문 영역을 문자열로 표현하기 위해 ObjectMapper를 통해 문자열 JSON으로 변환합니다.
+		mvc.perform(put(url)
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.content(new ObjectMapper().writeValueAsString(requestDto)))
+				.andExpect(status().isOk());
+
+
+//		ResponseEntity<Long> responseEntity = restTemplate
+//				.exchange(url, HttpMethod.PUT, requestEntity, Long.class);
+
+
+//		assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+//		assertThat(responseEntity.getBody()).isGreaterThan(0L);
 
 		//then
-		assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(responseEntity.getBody()).isGreaterThan(0L);
-
 		List<Posts> all = postsRepository.findAll();
 		assertThat(all.get(0).getTitle()).isEqualTo(expectedTitle);
 		assertThat(all.get(0).getContent()).isEqualTo(expectedContent);
